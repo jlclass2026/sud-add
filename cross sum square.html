@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross-Sum Square</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --error: #ef4444;
+      --border: #334155;
+      --target-bg: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+      color: #f1f5f9;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    p.subtitle {
+      color: var(--subtext);
+      margin: 0;
+      font-size: 1.15rem;
+      max-width: 580px;
+      line-height: 1.5;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      padding: 36px 40px;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 95px);
+      grid-template-rows: repeat(4, 95px);
+      gap: 14px;
+      width: fit-content;
+      min-height: 420px;
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      border-radius: 14px;
+      width: 95px;
+      height: 95px;
+    }
+
+    input.digit-box {
+      width: 95px;
+      height: 95px;
+      border: 3px solid var(--border);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      background-color: #0b1120;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+      -moz-appearance: textfield;
+    }
+
+    input.digit-box::-webkit-outer-spin-button,
+    input.digit-box::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input.digit-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.35);
+      transform: scale(1.03);
+    }
+
+    .clue-target {
+      background: var(--target-bg);
+      border: 2px dashed #475569;
+      color: #e2e8f0;
+      font-size: 1.8rem;
+      flex-direction: column;
+      gap: 2px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .current-val {
+      font-size: 0.95rem;
+      color: var(--subtext);
+      font-weight: 700;
+    }
+
+    .clue-target.match {
+      border: 2px solid var(--success);
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .clue-target.match .current-val {
+      color: var(--success);
+    }
+
+    .empty-corner {
+      visibility: hidden;
+      width: 95px;
+      height: 95px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+    }
+
+    button {
+      flex: 1;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1.15rem;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-new {
+      background-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn-new:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-clear {
+      background-color: #334155;
+      color: #f1f5f9;
+    }
+
+    .btn-clear:hover {
+      background-color: #475569;
+    }
+
+    .status-banner {
+      font-size: 1.25rem;
+      font-weight: 700;
+      min-height: 30px;
+      text-align: center;
+    }
+
+    .status-banner.win {
+      color: var(--success);
+    }
+
+    .status-banner.warn {
+      color: var(--error);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Cross-Sum Square</h1>
+    <p class="subtitle">Disarm the puzzle! Fill the grid with digits <strong>1 to 9</strong> (no repeats) so rows and columns hit their targets.</p>
+  </header>
+
+  <div class="game-card">
+    <div class="grid" id="puzzle-grid"></div>
+    <div class="status-banner" id="status"></div>
+    <div class="actions">
+      <button class="btn-clear" id="btn-clear">Clear Grid</button>
+      <button class="btn-new" id="btn-new">New Puzzle</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      let solution = [];
+      let rowTargets = [0, 0, 0];
+      let colTargets = [0, 0, 0];
+
+      const gridEl = document.getElementById("puzzle-grid");
+      const statusEl = document.getElementById("status");
+
+      function generatePuzzle() {
+        const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+        solution = digits;
+
+        rowTargets = [
+          digits[0] + digits[1] + digits[2],
+          digits[3] + digits[4] + digits[5],
+          digits[6] + digits[7] + digits[8]
+        ];
+
+        colTargets = [
+          digits[0] + digits[3] + digits[6],
+          digits[1] + digits[4] + digits[7],
+          digits[2] + digits[5] + digits[8]
+        ];
+
+        renderGrid();
+        statusEl.textContent = "";
+        statusEl.className = "status-banner";
+      }
+
+      function renderGrid() {
+        gridEl.innerHTML = "";
+
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 4; c++) {
+            if (r < 3 && c < 3) {
+              const input = document.createElement("input");
+              input.type = "text";
+              input.inputMode = "numeric";
+              input.maxLength = 1;
+              input.className = "digit-box";
+              input.dataset.row = r;
+              input.dataset.col = c;
+              input.dataset.idx = r * 3 + c;
+
+              input.addEventListener("input", handleInput);
+              input.addEventListener("keydown", handleKeydown);
+              gridEl.appendChild(input);
+            } else if (r < 3 && c === 3) {
+              const clue = document.createElement("div");
+              clue.className = "cell clue-target";
+              clue.id = `row-clue-${r}`;
+              clue.innerHTML = `<span>${rowTargets[r]}</span><span class="current-val" id="row-sum-${r}">0</span>`;
+              gridEl.appendChild(clue);
+            } else if (r === 3 && c < 3) {
+              const clue = document.createElement("div");
+              clue.className = "cell clue-target";
+              clue.id = `col-clue-${c}`;
+              clue.innerHTML = `<span>${colTargets[c]}</span><span class="current-val" id="col-sum-${c}">0</span>`;
+              gridEl.appendChild(clue);
+            } else {
+              const empty = document.createElement("div");
+              empty.className = "cell empty-corner";
+              gridEl.appendChild(empty);
+            }
+          }
+        }
+      }
+
+      function handleKeydown(e) {
+        const idx = parseInt(e.target.dataset.idx, 10);
+        const inputs = Array.from(document.querySelectorAll("input.digit-box"));
+
+        if (e.key === "Backspace" && !e.target.value && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      }
+
+      function handleInput(e) {
+        const val = e.target.value.replace(/[^1-9]/g, "");
+        e.target.value = val;
+
+        if (val) {
+          const idx = parseInt(e.target.dataset.idx, 10);
+          const next = document.querySelector(`input[data-idx="${idx + 1}"]`);
+          if (next) next.focus();
+        }
+
+        validateBoard();
+      }
+
+      function validateBoard() {
+        const inputs = Array.from(document.querySelectorAll("input.digit-box"));
+        const values = inputs.map(i => parseInt(i.value, 10) || 0);
+
+        const nonZero = values.filter(v => v > 0);
+        const hasDuplicates = new Set(nonZero).size !== nonZero.length;
+
+        let allRowsMatch = true;
+        for (let r = 0; r < 3; r++) {
+          const currentSum = values[r * 3] + values[r * 3 + 1] + values[r * 3 + 2];
+          const clueEl = document.getElementById(`row-clue-${r}`);
+          const sumEl = document.getElementById(`row-sum-${r}`);
+          
+          sumEl.textContent = currentSum > 0 ? `(${currentSum})` : "0";
+          if (currentSum === rowTargets[r]) {
+            clueEl.classList.add("match");
+          } else {
+            clueEl.classList.remove("match");
+            allRowsMatch = false;
+          }
+        }
+
+        let allColsMatch = true;
+        for (let c = 0; c < 3; c++) {
+          const currentSum = values[c] + values[c + 3] + values[c + 6];
+          const clueEl = document.getElementById(`col-clue-${c}`);
+          const sumEl = document.getElementById(`col-sum-${c}`);
+
+          sumEl.textContent = currentSum > 0 ? `(${currentSum})` : "0";
+          if (currentSum === colTargets[c]) {
+            clueEl.classList.add("match");
+          } else {
+            clueEl.classList.remove("match");
+            allColsMatch = false;
+          }
+        }
+
+        const isFull = nonZero.length === 9;
+
+        if (hasDuplicates) {
+          statusEl.textContent = "⚠️ Duplicate digits detected! Use 1–9 once.";
+          statusEl.className = "status-banner warn";
+        } else if (isFull && allRowsMatch && allColsMatch) {
+          statusEl.textContent = "💥 BOOM! Defused! Fantastic Work! 🎉";
+          statusEl.className = "status-banner win";
+        } else {
+          statusEl.textContent = "";
+          statusEl.className = "status-banner";
+        }
+      }
+
+      document.getElementById("btn-clear").addEventListener("click", () => {
+        document.querySelectorAll("input.digit-box").forEach(i => i.value = "");
+        validateBoard();
+        const first = document.querySelector('input[data-idx="0"]');
+        if (first) first.focus();
+      });
+
+      document.getElementById("btn-new").addEventListener("click", generatePuzzle);
+
+      // Start game
+      generatePuzzle();
+    });
+  </script>
+</body>
